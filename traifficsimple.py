@@ -55,4 +55,4 @@ def traffic1(n,l,time,mv):
     passdic['velocity']=vel
     return passdic
 	
-traffic1(3,19,5,3)
+print traffic1(3,19,5,3)
