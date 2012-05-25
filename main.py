@@ -1,10 +1,12 @@
 #traffic main file
 #Ben, Richard, Michael, Kelly
 #
+import random
+import numpy
+import pylab as py
 
 def traffic2(n,l,time,mv,lane):# Now with lanes!
-    import random
-    import numpy
+    
     road = numpy.zeros((lane,time+1,l+1), dtype=numpy.int) #the traffic world
     loc = numpy.zeros((lane,time+1,n), dtype=numpy.int) #location
     vel = numpy.zeros((lane,time+1,n), dtype=numpy.int) #velocity
@@ -65,8 +67,6 @@ def traffic2(n,l,time,mv,lane):# Now with lanes!
     passdic['velocity']=vel
     return passdic
 def simulation(l,time,mv,lane):
-    import numpy
-    import pylab as py
     
     #initialize variables
     velarray = numpy.zeros((time))
@@ -105,8 +105,6 @@ def simulation(l,time,mv,lane):
     
     return distance,road
 def Space_Time_Plot(l,time,lane,density,trafficinfo):
-    import pylab as py
-    
     spacefunctions = dict()
     spaceplots = dict()
     
@@ -164,11 +162,16 @@ while done !=True:				# outer loop
 	c=raw_input('Enter Choice: ')
 	if c == '1': 			##set options sub menu
 		print 'Options'
-		l=raw_input('Enter l: ')
-		lane=raw_input('Enter lane: ')
+		l=raw_input('Enter length of road: ')
+		l=int(l)
+		lane=raw_input('Enter number of lanes: ')
+		lane=int(lane)
 		density=raw_input('Enter car density: ')
+		density=float(density)
 		mv=raw_input('Enter max velocity: ')
+		mv=float(mv)
 		time=raw_input('Enter number of time steps: ')
+		time=int(time)
 	elif c =='2':   		##Build world based on options
 		print 'Build'
 		
