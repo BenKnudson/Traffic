@@ -1,32 +1,23 @@
-#traffic main file
-#Ben, Richard, Michael, Kelly
+#michaels animation simulation
 #
-import random
-import numpy
-import pylab as py
 
 def traffic2(n,l,time,mv,lane):# Now with lanes!
-   
+    import random
+    import numpy
+    road = numpy.zeros((lane,time+1,l+1), dtype=numpy.int) #the traffic world
     loc = numpy.zeros((lane,time+1,n), dtype=numpy.int) #location
-    vel = numpy.zeros((lane,time+1,n), dtype=numpy.int) #velocity 
+    vel = numpy.zeros((lane,time+1,n), dtype=numpy.int) #velocity
     dis = numpy.zeros((lane,time+1,n), dtype=numpy.int) #distance to car ahead in same lane
     agg = numpy.zeros((lane,time+1,n), dtype=numpy.int) #aggrevation value
-    
-    pv0 =  numpy.random.rand(n)
-    pv = [int(mv*(0.90+0.20*a)) for a in pv0] #make a preferred velocity 
-    bold0 = numpy.random.rand(n)
-    bold = [numpy.floor(10*a)+1 for a in bold0] #make boldness
 
-    posloc0 = range(l*lane)
-    posloc = [a+1 for a in posloc0]
+    posloc = range(l)
     for i in range(n): #set initial velocities and lane values
-        choice = random.choice(posloc)
-        lc = choice/l#choose random lane
-        vel[lc-1,0,i] = random.randint(0, mv)
-        loc[lc-1,0,i] = choice%l#set initial locations
-        posloc.remove(loc[lc-1,0,i])#avoid cars starting on top of each other (we don't want pile-ups)
+        lc = random.randint(0,lane-1)#choose random lane
+        vel[lc,0,i] = random.randint(0, mv)
+        loc[lc,0,i] = random.choice(posloc)#set initial locations
+        posloc.remove(loc[lc,0,i])#avoid cars starting on top of each other (we don't want pile-ups)
 
-    tr1 = range(time)
+    tr1 = range(time-1)
     tr = [a+1 for a in tr1]
     
     for t in tr:
@@ -40,32 +31,22 @@ def traffic2(n,l,time,mv,lane):# Now with lanes!
                     dis[h,t-1,k] = min(abs(-1*dif[dis_standin]))
                 else:
                     dis[h,t-1,k] = l-max(dif)
-                
+                #print t,k,loc[h,t-1,k],loc[h,t-1,:],dif,dis[h,t-1,k]
+                    
             #Changing velocities for next step
-              #approach preferred velocity
-                if vel[h,t-1,k] < pv[k]:
-                    vel[h,t,k] = vel[h,t-1,k]+(bold[k]/10)*(pv[k] - vel[h,t-1,k]) #speed up
-                elif vel[h,t-1,k] > pv[k]:
-                    vel[h,t,k] = vel[h,t-1,k]-(bold[k]/10)*(pv[k] - vel[h,t-1,k]) #slow down
-                else:
-                    vel[h,t,k] = vel[h,t-1,k]
-               #use environment to change velocity
-                if dis[h,t,k] == 1:
+                if dis[h,t-1,k] == 1:
                     vel[h,t,k] = 0
-                elif dis[h,t,k] <= vel[h,t-1,k]: 
-                    if dis[h,t,k] <= numpy.floor((1/2)*vel[h,t-1,k]): 
+                elif dis[h,t-1,k] <= vel[h,t-1,k]:
+                    if dis[h,t-1,k] <= numpy.floor((1/2)*vel[h,t-1,k]):
                         vel[h,t,k] = dis[h,t-1,k]-1
                     else:
-                        vel[h,t,k] = vel[h,t-1,k]-1
-                elif dis[h,t,k] > vel[h,t,k]+int(vel[h,t,k]/bold[k]):
-                    vel[h,t,k] = vel[h,t,k]+1
+                        vel[h,t,k] = numpy.floor(dis[h,t-1,k]/2)
+                elif dis[h,t-1,k] > 2*vel[h,t-1,k]:
+                    vel[h,t,k] = vel[h,t-1,k]+1
                 else:
-                    vel[h,t,k] = vel[h,t,k]
-                
-                ranbreakprob = 10*numpy.random.rand(1)
-                if ranbreakprob < 1 and vel[h,t,k]>0:
-                    vel[h,t,k] = vel[h,t,k]-int(0.2*vel[h,t,k])
-
+                    vel[h,t,k] = vel[h,t-1,k]
+                if vel[h,t,k] >= mv:
+                    vel[h,t,k] = mv
 
             loc[h,t,:] = loc[h,t-1,:]+vel[h,t,:]
             
@@ -73,14 +54,16 @@ def traffic2(n,l,time,mv,lane):# Now with lanes!
                 if loc[h,t,s] >= l:
                     loc[h,t,s] = loc[h,t,s]-l
                     
+            road[h,t,loc[h,t,:]] = 1
+                    
                     
     passdic = dict()
     passdic['distance'] = dis
+    passdic['road'] = road
     passdic['location']=loc
     passdic['velocity']=vel
     return passdic
-    
-   
+
 def simulation(l,time,mv,lane):
     import numpy
     import pylab as py
@@ -120,10 +103,11 @@ def simulation(l,time,mv,lane):
     py.grid(True)
     py.show()
     
+    return velocity,loc
 
-	return velocity,loc
-    	
     
+
+
 def Space_Time_Plot(l,time,lane,density,trafficinfo):
     import pylab as py
     
@@ -155,7 +139,7 @@ def Space_Time_Plot(l,time,lane,density,trafficinfo):
     py.show()
     
     return spacefunctions
-
+    
 def Traffic_Animation(space,l,time,lane,density):
     import Tkinter as tk
     import numpy as np
@@ -164,7 +148,7 @@ def Traffic_Animation(space,l,time,lane,density):
     
     n = int(density*l*lane)
     w = 1200/l
-    window = tk()
+    window = Tk()
     canvas = Canvas(window, width = 1200, height = lane*(w+50))
     canvas.pack()
     
@@ -180,53 +164,15 @@ def Traffic_Animation(space,l,time,lane,density):
 
     
     window.mainloop()
+    
+Traffic_Animation(space,l,time,lane,0.5)
 
-#default values 
+
 l = 10
 time = 10
 mv = 15
 lane = 1
-density=0.5
 
-
-
-done=False
-print 'Welcome to Traffic'
-menu1= '''
-Main Menu 
-1- set options 
-2- create world 
-3- run 
-q- quit'''
-
-while done !=True:				# outer loop
-	print menu1
-	c=raw_input('Enter Choice: ')
-	if c == '1': 			##set options sub menu
-		print 'Options'
-		l=raw_input('Enter length of road: ')
-		l=int(l)
-		lane=raw_input('Enter number of lanes: ')
-		lane=int(lane)
-		density=raw_input('Enter car density: ')
-		density=float(density)
-		mv=raw_input('Enter max velocity: ')
-		mv=float(mv)
-		time=raw_input('Enter number of time steps: ')
-		time=int(time)
-	
-	elif c=='2':			##run world	
-		print 'run!'					##visualize world
-		trafficinfo = simulation(l,time,mv,lane)
-		Space_Time_Plot(l,time,lane,density,trafficinfo)
-		space = Space_Time_Plot(l,time,lane,0.5,trafficinfo)    
-		Traffic_Animation(space,l,time,lane,0.5)	
-		
-	elif c=='q': 			## quit
-		done=True
-		
-	else:
-		print 'Invalid Choice.'
-		
-	
-print 'Done.'
+trafficinfo = simulation(l,time,mv,lane)
+space = Space_Time_Plot(l,time,lane,0.5,trafficinfo)    
+Traffic_Animation(space,l,time,lane,0.5)
