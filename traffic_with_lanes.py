@@ -28,7 +28,7 @@ def traffic2(n,l,time,mv,lane):# Now with lanes!
         lc = choice/l#choose random lane
         vel[lc-1,0,i] = random.randint(0, mv)
         loc[lc-1,0,i] = choice%l#set initial locations
-        posloc.remove(loc[lc-1,0,i])#avoid cars starting on top of each other (we don't want pile-ups)
+        posloc.remove(choice)#avoid cars starting on top of each other (we don't want pile-ups)
 
     tr1 = range(time)
     tr = [a+1 for a in tr1]

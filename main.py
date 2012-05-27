@@ -4,6 +4,7 @@
 import random
 import numpy
 import pylab as py
+import Tkinter as tk
 
 def traffic2(n,l,time,mv,lane):# Now with lanes!
    
@@ -20,12 +21,13 @@ def traffic2(n,l,time,mv,lane):# Now with lanes!
     posloc0 = range(l*lane)
     posloc = [a+1 for a in posloc0]
     for i in range(n): #set initial velocities and lane values
-        choice = random.choice(posloc)
-        lc = choice/l#choose random lane
-        vel[lc-1,0,i] = random.randint(0, mv)
-        loc[lc-1,0,i] = choice%l#set initial locations
-        posloc.remove(loc[lc-1,0,i])#avoid cars starting on top of each other (we don't want pile-ups)
-
+		choice = random.choice(posloc) #choose random spot
+		lc = choice/l                  #which lane
+		vel[lc-1,0,i] = random.randint(0, mv)
+		loc[lc-1,0,i] = choice%l    #which spot in lane
+		#posloc.remove(loc[lc,0,i])		#avoid cars starting on top of each other (we don't want pile-ups)
+		posloc.remove(choice)
+		
     tr1 = range(time)
     tr = [a+1 for a in tr1]
     
@@ -82,9 +84,7 @@ def traffic2(n,l,time,mv,lane):# Now with lanes!
     
    
 def simulation(l,time,mv,lane):
-    import numpy
-    import pylab as py
-    
+  
     #initialize variables
     velarray = numpy.zeros((time))
     avgvelocity = numpy.zeros((l))
@@ -92,7 +92,6 @@ def simulation(l,time,mv,lane):
     velocity = dict()
     loc = dict()
     
-
     for i in range(l): #runs the traffic simulation from from 1 car per lane to a car density of 1
         passdic = traffic2(i+1,l,time,mv,lane)
         velocities = passdic['velocity']
@@ -107,8 +106,7 @@ def simulation(l,time,mv,lane):
         #builds an array of the average current for each density
         avgcurrent[i] = avgvelocity[i]*(i+1)/l
     
-    
-        
+	
     d = py.arange(1./l,1+1./l,1./l)
     py.plot(d,avgcurrent)
     
@@ -119,13 +117,9 @@ def simulation(l,time,mv,lane):
     py.title('Traffic Current')
     py.grid(True)
     py.show()
-    
-
-	return velocity,loc
-    	
+    return velocity,loc	
     
 def Space_Time_Plot(l,time,lane,density,trafficinfo):
-    import pylab as py
     
     spacefunctions = dict()
     spaceplots = dict()
@@ -157,9 +151,6 @@ def Space_Time_Plot(l,time,lane,density,trafficinfo):
     return spacefunctions
 
 def Traffic_Animation(space,l,time,lane,density):
-    import Tkinter as tk
-    import numpy as np
-    
     cars = dict()
     
     n = int(density*l*lane)
@@ -185,7 +176,7 @@ def Traffic_Animation(space,l,time,lane,density):
 l = 10
 time = 10
 mv = 15
-lane = 1
+lane = 2
 density=0.5
 
 
@@ -195,8 +186,7 @@ print 'Welcome to Traffic'
 menu1= '''
 Main Menu 
 1- set options 
-2- create world 
-3- run 
+2- run 
 q- quit'''
 
 while done !=True:				# outer loop
