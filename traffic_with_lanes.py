@@ -1,4 +1,4 @@
-#Traffic.simple
+#Traffic.with.lanes
 #richard
 
 #n = number of cars
@@ -6,24 +6,31 @@
 #time = number of time steps to be taken
 #mv = Max velocity
 #lane = number of lanes
-
+ import random
+ import numpy
+ 
 def traffic2(n,l,time,mv,lane):# Now with lanes!
-    import random
-    import numpy
-    road = numpy.zeros((lane,time+1,l+1), dtype=numpy.int) #the traffic world
+   
     loc = numpy.zeros((lane,time+1,n), dtype=numpy.int) #location
     vel = numpy.zeros((lane,time+1,n), dtype=numpy.int) #velocity 
     dis = numpy.zeros((lane,time+1,n), dtype=numpy.int) #distance to car ahead in same lane
     agg = numpy.zeros((lane,time+1,n), dtype=numpy.int) #aggrevation value
+    
+    pv0 =  numpy.random.rand(n)
+    pv = [int(mv*(0.90+0.20*a)) for a in pv0] #make a preferred velocity 
+    bold0 = numpy.random.rand(n)
+    bold = [numpy.floor(10*a)+1 for a in bold0] #make boldness
 
-    posloc = range(l)
+    posloc0 = range(l*lane)
+    posloc = [a+1 for a in posloc0]
     for i in range(n): #set initial velocities and lane values
-        lc = random.randint(0,lane-1)#choose random lane
-        vel[lc,0,i] = random.randint(0, mv)
-        loc[lc,0,i] = random.choice(posloc)#set initial locations
-        posloc.remove(loc[lc,0,i])#avoid cars starting on top of each other (we don't want pile-ups)
+        choice = random.choice(posloc)
+        lc = choice/l#choose random lane
+        vel[lc-1,0,i] = random.randint(0, mv)
+        loc[lc-1,0,i] = choice%l#set initial locations
+        posloc.remove(loc[lc-1,0,i])#avoid cars starting on top of each other (we don't want pile-ups)
 
-    tr1 = range(time-1)
+    tr1 = range(time)
     tr = [a+1 for a in tr1]
     
     for t in tr:
@@ -37,22 +44,32 @@ def traffic2(n,l,time,mv,lane):# Now with lanes!
                     dis[h,t-1,k] = min(abs(-1*dif[dis_standin]))
                 else:
                     dis[h,t-1,k] = l-max(dif)
-                #print t,k,loc[h,t-1,k],loc[h,t-1,:],dif,dis[h,t-1,k]
-                    
+                
             #Changing velocities for next step
-                if dis[h,t-1,k] == 1:
-                    vel[h,t,k] = 0
-                elif dis[h,t-1,k] <= vel[h,t-1,k]: 
-                    if dis[h,t-1,k] <= numpy.floor((1/2)*vel[h,t-1,k]): 
-                        vel[h,t,k] = dis[h,t-1,k]-1
-                    else:
-                        vel[h,t,k] = numpy.floor(dis[h,t-1,k]/2)
-                elif dis[h,t-1,k] > 2*vel[h,t-1,k]:
-                    vel[h,t,k] = vel[h,t-1,k]+1
+              #approach preferred velocity
+                if vel[h,t-1,k] < pv[k]:
+                    vel[h,t,k] = vel[h,t-1,k]+(bold[k]/10)*(pv[k] - vel[h,t-1,k]) #speed up
+                elif vel[h,t-1,k] > pv[k]:
+                    vel[h,t,k] = vel[h,t-1,k]-(bold[k]/10)*(pv[k] - vel[h,t-1,k]) #slow down
                 else:
                     vel[h,t,k] = vel[h,t-1,k]
-                if vel[h,t,k] >= mv:
-                    vel[h,t,k] = mv  
+               #use environment to change velocity
+                if dis[h,t,k] == 1:
+                    vel[h,t,k] = 0
+                elif dis[h,t,k] <= vel[h,t-1,k]: 
+                    if dis[h,t,k] <= numpy.floor((1/2)*vel[h,t-1,k]): 
+                        vel[h,t,k] = dis[h,t-1,k]-1
+                    else:
+                        vel[h,t,k] = vel[h,t-1,k]-1
+                elif dis[h,t,k] > vel[h,t,k]+int(vel[h,t,k]/bold[k]):
+                    vel[h,t,k] = vel[h,t,k]+1
+                else:
+                    vel[h,t,k] = vel[h,t,k]
+                
+                ranbreakprob = 10*numpy.random.rand(1)
+                if ranbreakprob < 1 and vel[h,t,k]>0:
+                    vel[h,t,k] = vel[h,t,k]-int(0.2*vel[h,t,k])
+
 
             loc[h,t,:] = loc[h,t-1,:]+vel[h,t,:]
             
@@ -60,14 +77,11 @@ def traffic2(n,l,time,mv,lane):# Now with lanes!
                 if loc[h,t,s] >= l:
                     loc[h,t,s] = loc[h,t,s]-l
                     
-            road[h,t,loc[h,t,:]] = 1
-                    
                     
     passdic = dict()
     passdic['distance'] = dis
-    passdic['road'] = road
     passdic['location']=loc
     passdic['velocity']=vel
     return passdic
 	
-traffic2(3,10,3,3,2)  #call
+print traffic2(3,10,3,3,2)  #call
