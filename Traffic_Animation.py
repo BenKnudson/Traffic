@@ -1,6 +1,3 @@
-#michaels animation simulation
-#
-
 def traffic2(n,l,time,mv,lane):# Now with lanes!
     import random
     import numpy
@@ -148,7 +145,7 @@ def Traffic_Animation(space,l,time,lane,density):
     
     n = int(density*l*lane)
     w = 1200/l
-    window = Tk()
+    window = tk()
     canvas = Canvas(window, width = 1200, height = lane*(w+50))
     canvas.pack()
     
@@ -165,7 +162,6 @@ def Traffic_Animation(space,l,time,lane,density):
     
     window.mainloop()
     
-Traffic_Animation(space,l,time,lane,0.5)
 
 
 l = 10
