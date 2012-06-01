@@ -9,7 +9,7 @@ import Tkinter as tk
 print 'Loading...'
 
 #function definitions
-def traffic2(n,l,time,mv,lane):# Now with lanes!
+def traffic2(n,l,time,mv,lane):				# Now with lanes!
 	'''
 	n = number of cars
 	l = length of road (l > n)
@@ -32,9 +32,10 @@ def traffic2(n,l,time,mv,lane):# Now with lanes!
 	
 	for i in range(n): #set initial velocities and lane values
 		choice = random.choice(posloc)
+		posloc.remove(choice)
 		lc = choice/l#choose random lane
 		vel[lc-1,0,i] = random.randint(0, mv)
-		loc[lc-1,0,i] = choice%l#set initial locationsposloc.remove(loc[lc-1,0,i])#avoid cars starting on top of each other (we don't want pile-ups)
+		loc[lc-1,0,i] = choice%l #set initial locationsposloc.remove(loc[lc-1,0,i])#avoid cars starting on top of each other (we don't want pile-ups)
 	tr1 = range(time)
 	tr = [a+1 for a in tr1]
 	
@@ -118,8 +119,30 @@ def simulation(l,time,mv,lane):
 	py.grid(True)
 	py.show()
 	return velocity,loc
+	
     
-
+def runONE(l,time,mv,lane):
+	'''
+	This is a subrun of simulation. it only runs one density.
+	'''
+	#initialize variables
+	velarray = numpy.zeros((time))
+	avgvelocity = numpy.zeros((l))
+	avgcurrent = numpy.zeros((l))
+	velocity = dict()
+	loc = dict()
+	n = int(density*l*lane) 
+	passdic = traffic2(n,l,time,mv,lane)
+	velocities = passdic['velocity']
+	velocity[1] = passdic['velocity']
+	loc[1] = passdic['location']
+	
+	for k in range(time): #builds an array of the total velocity at each point in time
+		velarray[k] = sum(sum(velocities[:,k,:]))
+		
+	d = py.arange(1./l,1+1./l,1./l)
+	return velocity,loc
+	
 def Space_Time_Plot(l,time,lane,density,trafficinfo):
     '''
 	
@@ -153,6 +176,36 @@ def Space_Time_Plot(l,time,lane,density,trafficinfo):
     
     return spacefunctions
 
+def Space_Time_PlotONE(l,time,lane,density,trafficinfo):
+    '''
+	This is a version of STP that only uses one data set. faster
+	'''
+    spacefunctions = dict()
+    spaceplots = dict()
+    n = int(density*l*lane) #determines the car number that the user wants to plot
+    initpositions = trafficinfo[1][1][:,0,:][0] #[loc (not vel)][time][relic]
+    #gets the cars' initial positions
+    for i in range(n):
+        spacefunctions[i]=[initpositions[i]]
+        
+    # builds a dictionary of lists with all the cars' distance traveled over the length of the simulation
+    for i in range(time-1):
+        for j in range(n):
+            spacefunctions[j].append(trafficinfo[0][1][0,i+1,j]+spacefunctions[j][i])
+    
+    # builds a dictionary of each car's individual space time plot before showing all of them together
+    t = py.arange(0,time,1)
+    for i in range(n):
+        spaceplots[i] = py.plot(spacefunctions[i],t)
+    
+    py.xlabel('Space')
+    py.ylabel('Time')
+    py.title('Traffic Simulation Space/Time Plot for Density %s'%(density))
+    py.show()
+    
+    return spacefunctions
+	
+
 def Traffic_Animation(space,l,time,lane,density):
     '''
 	Animates the info from Simulation
@@ -181,11 +234,11 @@ def Traffic_Animation(space,l,time,lane,density):
 
 #initialization
 #default values 
-l = 10
-time = 10
+l = 20
+time = 40
 mv = 15
-lane = 2
-density=0.5
+lane = 1
+density=0.05
 trafficinfo=[-1,-1] #dummy traffic info for fail check
 
 done=False
@@ -193,9 +246,10 @@ print 'Welcome to Traffic'
 menu1= '''
 Main Menu 
 1- Options 
-2- Run, show car current
+2- Run once
 3- Position Graph of cars
-4- Animation
+4- Simulate multiple densities
+5- Animation
 q-[quit]'''
 credits= '''
 Ben, Richard, and Michael thank you for your interest in Traffic!
@@ -238,9 +292,10 @@ while done !=True:				# main program loop
 				print menu1
 				d=True
 			else :
-				print 'Invalid choice.'
+				print menu1
+				d=True
 				
-	elif c=='2':			##run world	
+	elif c=='4':			##run world	
 		print 'runing!...'					
 		trafficinfo = simulation(l,time,mv,lane)
 		space = Space_Time_Plot(l,time,lane,density,trafficinfo)  
@@ -249,15 +304,19 @@ while done !=True:				# main program loop
 		if c2=='y':
 			print 'opening Graphs...'
 			Space_Time_Plot(l,time,lane,density,trafficinfo)
-	
-	elif c=='3': 				## see graphs of flow and locations
+			
+	elif c=='2':
+		print 'runing once...'
+		trafficinfo=runONE(l,time,mv,lane)
+		
+	elif c=='3': 				## see graphs of locations
 		if trafficinfo[0]<0:
 			print 'Error. Must run first.'
 		else:
 			print 'opening Graphs...'
-			Space_Time_Plot(l,time,lane,density,trafficinfo)
+			Space_Time_PlotONE(l,time,lane,density,trafficinfo)
 		
-	elif c=='4':                   ## animation of cars on road
+	elif c=='5':                   ## animation of cars on road
 		if trafficinfo[0]<0:
 			print 'Error. Must run first.'
 		else:		
