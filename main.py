@@ -51,23 +51,32 @@ def traffic2(n,l,time,mv,lane):				# Now with lanes!
 					dis[h,t-1,k] = l-max(dif)
 					
 				if vel[h,t-1,k] < pv[k]:   #Changing velocities for next step#approach preferred velocity
-					vel[h,t,k] = vel[h,t-1,k]+(bold[k]/10)*(pv[k] - vel[h,t-1,k]) #speed up
+					vel[h,t,k] = vel[h,t-1,k]+((bold[k]+agg[h,t-1,k])/10)*(pv[k] - vel[h,t-1,k]) #speed up
+					if agset==1:
+						agg[h,t,k]= agg[h,t-1,k]+1
 				elif vel[h,t-1,k] > pv[k]:
-					vel[h,t,k] = vel[h,t-1,k]-(bold[k]/10)*(pv[k] - vel[h,t-1,k]) #slow down
+					vel[h,t,k] = vel[h,t-1,k]-((bold[k]+agg[h,t-1,k])/10)*(pv[k] - vel[h,t-1,k]) #slow down
 				else:
 					vel[h,t,k] = vel[h,t-1,k]
 				
 				if dis[h,t,k] == 1: #use environment to change velocity
 					vel[h,t,k] = 0
+					if agset==1:
+						agg[h,t,k]= agg[h,t-1,k]+3
 				elif dis[h,t,k] <= vel[h,t-1,k]: 
+					if agset==1:
+						agg[h,t,k]= agg[h,t-1,k]+2
 					if dis[h,t,k] <= numpy.floor((1/2)*vel[h,t-1,k]):
 						vel[h,t,k] = dis[h,t-1,k]-1
 					else:
 						vel[h,t,k] = vel[h,t-1,k]-1
-				elif dis[h,t,k] > vel[h,t,k]+int(vel[h,t,k]/bold[k]):
+				elif dis[h,t,k] > vel[h,t,k]+int(vel[h,t,k]/(bold[k]+agg[h,t-1,k])):
 					vel[h,t,k] = vel[h,t,k]+1
 				else:
 					vel[h,t,k] = vel[h,t,k]
+				
+				if agg[h,t,k]==0 and agg[h,t-1,k]>0:
+					agg[h,t,k]=agg[h,t-1,k]-1
 				
 				ranbreakprob = 10*numpy.random.rand(1)
 				if ranbreakprob < 1 and vel[h,t,k]>0:
@@ -205,40 +214,53 @@ def Space_Time_PlotONE(l,time,lane,density,trafficinfo):
     
     return spacefunctions
 	
-
 def Traffic_Animation(space,l,time,lane,density):
-    '''
-	Animates the info from Simulation
-	args (space,length,time,lane,density)
-	'''
-    cars = dict()
     
-    n = int(density*l*lane)
-    w = 1200/l
-    window = tk.Tk()
-    canvas = tk.Canvas(window, width = 1200, height = lane*(w+50))
-    canvas.pack()
+	cars = dict()
+	v = dict()
+	spots = dict()
     
-    for i in range(n):
-        cars[i] = canvas.create_rectangle(w*space[i][0],20,w*space[i][0]+w,20+w,fill="red", tag=i)
-        
-    for k in range(time):
-        for t in range(w):
-            for i in range(n):
-                canvas.move(i,space[i][k],0)
-                canvas.after(20)
-                canvas.update()
 
-    
-    window.mainloop()
+	n = int(density*float(l*lane))
+
+	w = 1200/l
+	window = tk.Tk()
+	canvas = tk.Canvas(window, width = 1200, height = lane*(w+50))
+	canvas.pack()
+	
+	for i in range(n):
+		cars[i] = canvas.create_rectangle(w*space[i][0],20,w*space[i][0]+w,20+w,fill="red")
+        
+	for i in range(l-1):
+		spots[i] = canvas.create_line(w*(i+1),0,w*(i+1),lane*(w+50))
+		
+	for k in range(n):
+		v[k] = []
+		
+	for t in range(time - 1):
+		for k in range(n):
+			p1 = space[k][t]
+			p2 = space[k][t+1]
+			v[k].append(int((round((p2 - p1)*w/10))))
+			
+	for t in range(time - 1):
+		for p in range(10):
+			for i in range(n):
+				canvas.move(cars[i],v[i][t],0)
+				canvas.after(20)
+				canvas.update()
+	window.mainloop()
+	return 
+
 
 #initialization
 #default values 
-l = 20
+l = 100
 time = 40
 mv = 15
 lane = 1
-density=0.05
+density=0.2
+agset=0
 trafficinfo=[-1,-1] #dummy traffic info for fail check
 
 done=False
@@ -270,6 +292,7 @@ while done !=True:				# main program loop
 			print '3-Car density:     ' + str(density)
 			print '4-Max velocity	  ' + str(mv)
 			print '5-Time steps       ' + str(time)
+			print '6-agrivation on/off [0,1] ' + str(agset)
 			print '0-[return]'
 			e=0
 			e=raw_input('Enter Choice to change: ')
@@ -288,6 +311,9 @@ while done !=True:				# main program loop
 			elif e=='5':
 				time=raw_input('Enter number of time steps: ')
 				time=int(time)
+			elif e=='6':
+				agset=raw_input('Agrivation on/off: ')
+				agset=int(agset)
 			elif e=='0':
 				print menu1
 				d=True
@@ -303,7 +329,7 @@ while done !=True:				# main program loop
 		c2=raw_input('')
 		if c2=='y':
 			print 'opening Graphs...'
-			Space_Time_Plot(l,time,lane,density,trafficinfo)
+			space=Space_Time_Plot(l,time,lane,density,trafficinfo)
 			
 	elif c=='2':
 		print 'runing once...'
@@ -314,14 +340,14 @@ while done !=True:				# main program loop
 			print 'Error. Must run first.'
 		else:
 			print 'opening Graphs...'
-			Space_Time_PlotONE(l,time,lane,density,trafficinfo)
+			space= Space_Time_PlotONE(l,time,lane,density,trafficinfo)
 		
 	elif c=='5':                   ## animation of cars on road
 		if trafficinfo[0]<0:
 			print 'Error. Must run first.'
 		else:		
 			print 'Opening visualizer...'
-			Traffic_Animation(space,l,time,lane,0.5)
+			Traffic_Animation(space,l,time,lane,density)
 			
 	elif c=='m':            #menu command
 		print menu1
