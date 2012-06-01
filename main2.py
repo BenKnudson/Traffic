@@ -69,9 +69,9 @@ def traffic2(n,l,time,mv,lane):				# Now with lanes!
 					if dis[h,t,k] <= numpy.floor((1/2)*vel[h,t-1,k]):
 						vel[h,t,k] = dis[h,t-1,k]-1
 					else:
-						vel[h,t,k] = vel[h,t-1,k]-1       ######
+						vel[h,t,k] = vel[h,t-1,k]-.2*vel[h,t-1,k]    ####Ben change flag
 				elif dis[h,t,k] > vel[h,t,k]+int(vel[h,t,k]/(bold[k]+agg[h,t-1,k])): ######
-					vel[h,t,k] = vel[h,t,k]+1  ######
+					vel[h,t,k] = vel[h,t,k]+.2*vel[h,t,k]  ######
 				else:
 					vel[h,t,k] = vel[h,t-1,k]        #####t-1 flag
 				
@@ -108,12 +108,14 @@ def simulation(l,time,mv,lane):
 	velocity = dict()
 	loc = dict()
 	
-	for i in range(l): #runs the traffic simulation from from 1 car per lane to a car density of 1
-		passdic = traffic2(i+1,l,time,mv,lane)
-		velocities = passdic['velocity']
-		velocity[i] = passdic['velocity']
-		loc[i] = passdic['location']
-		
+	for i in range(l):	#runs the traffic simulation from from 1 car per lane to a car density of 1
+		if i%5=='0':
+			passdic = traffic2(i+1,l,time,mv,lane)
+			velocities = passdic['velocity']
+			velocity[i] = passdic['velocity']
+			loc[i] = passdic['location']
+		else:
+			return
 		for k in range(time): #builds an array of the total velocity at each point in time
 			velarray[k] = sum(sum(velocities[:,k,:]))
 		
@@ -255,11 +257,11 @@ def Traffic_Animation(space,l,time,lane,density):
 
 #initialization
 #default values 
-l = 40
+l = 500
 time = 40
 mv = 15
 lane = 1
-density=0.6
+density=0.1
 agset=0
 trafficinfo=[-1,-1] #dummy traffic info for fail check
 
