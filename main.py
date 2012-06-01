@@ -69,18 +69,18 @@ def traffic2(n,l,time,mv,lane):				# Now with lanes!
 					if dis[h,t,k] <= numpy.floor((1/2)*vel[h,t-1,k]):
 						vel[h,t,k] = dis[h,t-1,k]-1
 					else:
-						vel[h,t,k] = vel[h,t-1,k]-1
-				elif dis[h,t,k] > vel[h,t,k]+int(vel[h,t,k]/(bold[k]+agg[h,t-1,k])):
-					vel[h,t,k] = vel[h,t,k]+1
+						vel[h,t,k] = vel[h,t-1,k]-.2*vel[h,t-1,k]    ####Ben change flag
+				elif dis[h,t,k] > 2*vel[h,t,k]+int(vel[h,t,k]/(bold[k]+agg[h,t-1,k])): ######
+					vel[h,t,k] = vel[h,t,k]+.2*vel[h,t,k]  ######
 				else:
-					vel[h,t,k] = vel[h,t,k]
+					vel[h,t,k] = vel[h,t-1,k]        #####t-1 flag
 				
 				if agg[h,t,k]==0 and agg[h,t-1,k]>0:
 					agg[h,t,k]=agg[h,t-1,k]-1
 				
 				ranbreakprob = 10*numpy.random.rand(1)
 				if ranbreakprob < 1 and vel[h,t,k]>0:
-					vel[h,t,k] = vel[h,t,k]-int(0.2*vel[h,t,k])
+					vel[h,t,k] = vel[h,t,k]-int(0.2*vel[h,t,k])   ####ben changed the percent of braking
 					
 				loc[h,t,:] = loc[h,t-1,:]+vel[h,t,:]
 				
@@ -247,7 +247,7 @@ def Traffic_Animation(space,l,time,lane,density):
 		for p in range(10):
 			for i in range(n):
 				canvas.move(cars[i],v[i][t],0)
-				canvas.after(20)
+				canvas.after(5)
 				canvas.update()
 	window.mainloop()
 	return 
@@ -255,11 +255,11 @@ def Traffic_Animation(space,l,time,lane,density):
 
 #initialization
 #default values 
-l = 100
+l = 40
 time = 40
 mv = 15
 lane = 1
-density=0.2
+density=0.6
 agset=0
 trafficinfo=[-1,-1] #dummy traffic info for fail check
 
@@ -275,8 +275,8 @@ Main Menu
 q-[quit]'''
 credits= '''
 Ben, Richard, and Michael thank you for your interest in Traffic!
-Traffic was programmed in Python 3
-Programmed for PHYS 400, Cal Poly Physics Department
+Traffic was programmed in Python
+for PHYS 400, Cal Poly Physics Department
 May 30, 2012
 '''
 
