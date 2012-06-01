@@ -162,8 +162,8 @@ def Traffic_Animation(space,l,time,lane,density):
     
     n = int(density*l*lane)
     w = 1200/l
-    window = tk()
-    canvas = Canvas(window, width = 1200, height = lane*(w+50))
+    window = tk.Tk()
+    canvas = tk.Canvas(window, width = 1200, height = lane*(w+50))
     canvas.pack()
     
     for i in range(n):
@@ -243,7 +243,7 @@ while done !=True:				# main program loop
 	elif c=='2':			##run world	
 		print 'runing!...'					
 		trafficinfo = simulation(l,time,mv,lane)
-		space = Space_Time_Plot(l,time,lane,0.5,trafficinfo)  
+		space = Space_Time_Plot(l,time,lane,density,trafficinfo)  
 		print 'Caluculations complete. Would you like to see car position graph? [y/n]'
 		c2=raw_input('')
 		if c2=='y':
