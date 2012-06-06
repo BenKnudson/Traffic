@@ -153,7 +153,6 @@ def runONE(l,time,mv,lane):
 	return velocity,loc
 
 
-
 def Space_Time_Plot(l,time,lane,density,trafficinfo): 
     '''
 	Need to run simulation function to get trafficinfo variable
