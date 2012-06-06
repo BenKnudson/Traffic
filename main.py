@@ -1,15 +1,15 @@
 #traffic main file
 #Ben, Richard, Michael, Kelly
 #
+print 'Loading...'
+
 import random
 import numpy
 import pylab as py
 import Tkinter as tk
 
-print 'Loading...'
-
-#function definitions
-def traffic2(n,l,time,mv,lane):				# Now with lanes!
+#begin function definitions
+def traffic2(n,l,time,mv,lane): 			# Now with lanes!
 	'''
 	n = number of cars
 	l = length of road (l > n)
@@ -128,8 +128,8 @@ def simulation(l,time,mv,lane):
 	py.grid(True)
 	py.show()
 	return velocity,loc
-	
-    
+
+
 def runONE(l,time,mv,lane):
 	'''
 	This is a subrun of simulation. it only runs one density.
@@ -151,11 +151,20 @@ def runONE(l,time,mv,lane):
 		
 	d = py.arange(1./l,1+1./l,1./l)
 	return velocity,loc
-	
-def Space_Time_Plot(l,time,lane,density,trafficinfo):
+
+
+
+def Space_Time_Plot(l,time,lane,density,trafficinfo): 
     '''
-	
+	Need to run simulation function to get trafficinfo variable
+	Density needs to match one of the possible densities from the number of spaces exactly, i.e. if there are 10 spaces then only densities that are multiples of 0.1 are valid.
+
+	l, time, and lane all must match the variables used in Simulation
+	returns information necessary to run the Traffic_Animation function
+
+	this function currently only operates when a single lane is used
 	'''
+    import pylab as py
     spacefunctions = dict()
     spaceplots = dict()
     
@@ -213,44 +222,74 @@ def Space_Time_PlotONE(l,time,lane,density,trafficinfo):
     py.show()
     
     return spacefunctions
-	
-def Traffic_Animation(space,l,time,lane,density):
-    
-	cars = dict()
-	v = dict()
-	spots = dict()
-    
 
-	n = int(density*float(l*lane))
 
-	w = 1200/l
-	window = tk.Tk()
-	canvas = tk.Canvas(window, width = 1200, height = lane*(w+50))
-	canvas.pack()
+def Traffic_Animation(space,l,time,lane,density,delay):
+    '''
 	
-	for i in range(n):
-		cars[i] = canvas.create_rectangle(w*space[i][0],20,w*space[i][0]+w,20+w,fill="red")
-        
-	for i in range(l-1):
-		spots[i] = canvas.create_line(w*(i+1),0,w*(i+1),lane*(w+50))
-		
-	for k in range(n):
-		v[k] = []
-		
-	for t in range(time - 1):
-		for k in range(n):
-			p1 = space[k][t]
-			p2 = space[k][t+1]
-			v[k].append(int((round((p2 - p1)*w/10))))
-			
-	for t in range(time - 1):
-		for p in range(10):
-			for i in range(n):
-				canvas.move(cars[i],v[i][t],0)
-				canvas.after(5)
-				canvas.update()
-	window.mainloop()
-	return 
+	Note that the Space Time plot function must be run before the Traffic
+	Animation and that they must both use the same density
+
+	'space' is the variable returned by the Space Time Plot Function
+	l, time, and lane must match the variables used in Space_Time_Plot and
+	simulation
+	delay let's the user set how quickly the animation plays
+
+	Early termination of the animation window will cause the function to return
+	an error that will cause the the main program to crash
+
+	Animation currently only works with a single lane
+	'''
+    import Tkinter as tk
+    import numpy as np
+    
+    # initialize variables
+    cars = dict()
+    v = dict()
+    spots = dict()
+    n = int(density*l*lane)
+    w = 1200/l #scales the size of the cars
+    
+    window = tk.Tk()
+    canvas = tk.Canvas(window, width = 1200, height = lane*(w+50))
+    canvas.pack()
+    
+    # creates the cars with a properly scales size
+    for i in range(n):
+        cars[i] = [canvas.create_rectangle(w*space[i][0],20,w*space[i][0]+w,20+w,fill="red")]
+        cars[i].append(w*space[i][0])
+    
+    # creates lines to mark discrete road positions
+    for i in range(l-1):
+        spots[i] = canvas.create_line(w*(i+1),0,w*(i+1),lane*(w+50))
+    
+    # creates dictionary of velocities for all the cars
+    for k in range(n):
+        v[k] = []
+    
+    for t in range(time - 1):
+        for k in range(n):
+            p1 = space[k][t]
+            p2 = space[k][t+1]
+            v[k].append(int((round((p2 - p1)*w/10))))
+    
+    
+    # plays the animation
+    for t in range(time - 1):
+        # breaks each car's movements into 10 movements to smooth out the visualization
+        for p in range(10):
+            for i in range(n):
+                # if the car travels out of the window it resets it at the begining of the window
+                if cars[i][1] < 1200:
+                    dx = v[i][t]
+                else:
+                    dx = -(1200 - v[i][t])
+                cars[i][1] += dx
+                canvas.move(cars[i][0],dx,0)
+                canvas.after(delay)
+                canvas.update()
+
+    window.mainloop()
 
 
 #initialization
@@ -261,6 +300,7 @@ mv = 15
 lane = 1
 density=0.6
 agset=0
+delay=4
 trafficinfo=[-1,-1] #dummy traffic info for fail check
 
 done=False
@@ -290,9 +330,10 @@ while done !=True:				# main program loop
 			print '1-Road length:     ' + str(l)
 			print '2-Number of lanes: ' + str(lane)
 			print '3-Car density:     ' + str(density)
-			print '4-Max velocity	  ' + str(mv)
+			print '4-Max velocity     ' + str(mv)
 			print '5-Time steps       ' + str(time)
-			print '6-agrivation on/off [0,1] ' + str(agset)
+			print '6-agrivation on/off [1,0] ' + str(agset)
+			print '7-animation delay  ' + str(delay)
 			print '0-[return]'
 			e=0
 			e=raw_input('Enter Choice to change: ')
@@ -312,8 +353,11 @@ while done !=True:				# main program loop
 				time=raw_input('Enter number of time steps: ')
 				time=int(time)
 			elif e=='6':
-				agset=raw_input('Agrivation on/off: ')
+				agset=raw_input('Agrivation 1/0: ')
 				agset=int(agset)
+			elif e=='7':
+				delay=raw_input('Enter Animation delay time: ')
+				delay=int(delay)
 			elif e=='0':
 				print menu1
 				d=True
@@ -347,7 +391,7 @@ while done !=True:				# main program loop
 			print 'Error. Must run first.'
 		else:		
 			print 'Opening visualizer...'
-			Traffic_Animation(space,l,time,lane,density)
+			Traffic_Animation(space,l,time,lane,density,delay)
 			
 	elif c=='m':            #menu command
 		print menu1
